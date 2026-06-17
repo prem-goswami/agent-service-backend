@@ -1,342 +1,170 @@
-# 🚀 Agentic Service Backend: Stateful AI Gateway
+# 🤖 AI Chatbot API — Multi-Mode Conversational AI
 
-A production-ready, asynchronous API built with **FastAPI** and **Python 3.13**, designed to act as a high-performance gateway for Large Language Models. This project bridges the gap between raw LLM capabilities and production-grade software architecture, featuring real-time streaming, session persistence, and cloud-native deployment.
+A production-ready conversational AI backend built with **FastAPI** and **OpenAI GPT-4o-mini**, featuring configurable AI personas, multishot few-shot prompt injection, real-time token tracking, and live cost estimation.
 
-[![Python Version](https://img.shields.io/badge/Python-3.13+-blue.svg)](https://www.python.org/)
-[![Framework](https://img.shields.io/badge/FastAPI-Latest-green.svg)](https://fastapi.tiangolo.com/)
-[![Status](https://img.shields.io/badge/Status-Production--Ready-brightgreen.svg)]()
-[![Deployment](https://img.shields.io/badge/Deployment-Railway.app-0B0D47.svg)](https://railway.app/)
-
-## 📋 Table of Contents
-
-- [Overview](#overview)
-- [Architectural Highlights](#-architectural-highlights)
-- [Tech Stack](#-technical-stack)
-- [Quick Start](#-quick-start--implementation)
-- [Installation](#installation)
-- [Environment Configuration](#environment-configuration)
-- [Running the Server](#running-the-server)
-- [Deployment](#-deployment-instructions-railway)
-- [Core Engineering Concepts](#-core-engineering-concepts-internal)
-- [API Documentation](#-api-documentation)
-- [Contact](#-contact)
-
-## 📌 Overview
-
-**Agentic Service Backend** is an enterprise-grade AI gateway that bridges Large Language Models with production software architecture. It enables seamless LLM integration with advanced features including real-time token streaming, multi-turn conversation persistence, asynchronous I/O handling, and cloud-native deployment.
-
-### Key Capabilities
-- ✅ **Non-blocking async operations** for massive concurrent throughput
-- ✅ **Real-time token streaming** with Server-Sent Events (SSE)
-- ✅ **Stateful session management** across multi-turn conversations
-- ✅ **Production-grade DevOps** with automated CI/CD
-- ✅ **Sub-100ms response times** through optimized async patterns
-- ✅ **Cloud-native architecture** ready for enterprise scale
+![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green?style=flat-square&logo=fastapi)
+![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-black?style=flat-square&logo=openai)
+![Railway](https://img.shields.io/badge/Deployed-Railway-purple?style=flat-square)
 
 ---
 
-## 🏗️ Architectural Highlights
+## ✨ Features
 
-### Asynchronous Orchestration
-Leverages **asyncio** and **AsyncOpenAI** to handle non-blocking I/O, allowing the server to manage multiple concurrent user sessions without performance degradation. This architecture ensures optimal resource utilization and eliminates thread-blocking bottlenecks common in traditional synchronous APIs.
-
-### Real-time Token Streaming
-Implemented using **Server-Sent Events (SSE)** and **Python generators** to deliver a "typing" effect, significantly reducing **Time-To-First-Token (TTFT)**. Users experience responsive, real-time interaction with the AI model, improving perceived performance and user satisfaction.
-
-### Stateful Session Management
-Engineered a custom **in-memory context manager** that persists conversation history across multi-turn interactions. This enables coherent, context-aware responses that maintain conversational continuity while optimizing token usage through intelligent context windowing.
-
-### Production DevOps
-Architected for cloud-native environments with:
-- Dedicated **prod** branch workflow for release management
-- Automated **CI/CD via Railway** for frictionless deployments
-- Robust **environment variable security** with encrypted credentials
-- Containerization-ready structure for Docker deployment
+| Feature | Description |
+|---|---|
+| 🎭 **3 AI Personas** | Gen Z Friend, Teacher, and Storyteller — each with a handcrafted system prompt and injected few-shot examples |
+| 🎯 **Multishot Injection** | Few-shot example pairs are injected per mode to prime the model's tone and style before the first user message |
+| ⚙️ **Configurable Prompts** | System prompt is a runtime variable controlled via the `mode` API parameter — swap personas without restarting |
+| 🔒 **Injection Defence** | All user input wrapped in XML tags to prevent prompt injection and instruction hijacking |
+| 📊 **Token Counting** | Input and output tokens tracked on every API call via OpenAI's `usage` response field |
+| 💰 **Cost Estimation** | Estimated USD cost returned with every response, calculated from live token counts and model pricing |
+| 🧠 **Session Memory** | Per-session conversation history maintained in-memory across turns |
 
 ---
 
-## 🛠️ Technical Stack
+## 🛠️ Tech Stack
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Framework** | FastAPI | High-performance async web framework |
-| **Language** | Python 3.13+ | Modern, performant Python runtime |
-| **AI Integration** | OpenAI API (GPT-4o / GPT-4o-mini) | Advanced language model access |
-| **Data Validation** | Pydantic V2 | Runtime type checking & validation |
-| **Deployment** | Railway.app | Linux/Docker cloud deployment |
-| **Async Runtime** | asyncio | Non-blocking I/O orchestration |
-| **Streaming** | Server-Sent Events (SSE) | Real-time token delivery |
+| Layer | Technology |
+|---|---|
+| Runtime | Python 3.11+ |
+| API Framework | FastAPI |
+| AI Provider | OpenAI GPT-4o-mini |
+| Validation | Pydantic v2 |
+| Async Client | asyncio / AsyncOpenAI |
+| Deployment | Railway |
 
 ---
 
-## 🚀 Quick Start & Implementation
+## 🚀 API Endpoints
 
-### Prerequisites
-- **Python 3.13+** installed on your system
-- **OpenAI API Key** (obtain from [OpenAI Platform](https://platform.openai.com/))
-- **Git** for version control
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/` | Health check — returns status and active session IDs |
+| `GET` | `/modes` | Lists all available personas with descriptions |
+| `POST` | `/chat` | Send a message — returns AI response with token and cost stats |
+| `GET` | `/history/{sessionId}` | Returns visible conversation history (excludes internal scaffolding) |
+| `DELETE` | `/session/{sessionId}` | Clears session — use when switching modes |
 
-### Installation
+---
 
-#### 1. Clone the Repository
-```bash
-git clone https://github.com/prem-goswami/agent-service-backend.git
-cd agent-service-backend
+## 📡 Request & Response
+
+### `POST /chat`
+
+**Request body:**
+```json
+{
+  "sessionId": "user-abc-123",
+  "message": "explain recursion to me",
+  "mode": "teacher"
+}
 ```
 
-#### 2. Create Virtual Environment
-```bash
-# Create virtual environment
-python -m venv .venv
-
-# Activate virtual environment
-source .venv/bin/activate  # macOS/Linux
-# OR
-.venv\Scripts\activate     # Windows
+**Response:**
+```json
+{
+  "session_id": "user-abc-123",
+  "mode": "teacher",
+  "response": "Great question! Think of recursion like...",
+  "history_length": 5,
+  "token_stats": {
+    "input_tokens": 412,
+    "output_tokens": 138,
+    "total_tokens": 550,
+    "estimated_cost_usd": 0.00014490
+  }
+}
 ```
 
-#### 3. Install Dependencies
-```bash
-pip install -r requirements.txt
+### `GET /modes`
+
+```json
+{
+  "modes": {
+    "genz": "Chill Gen Z best friend — supportive, funny, slang-heavy",
+    "teacher": "Patient and clear teacher — explains anything step by step",
+    "storyteller": "Vivid co-author — builds immersive stories with you"
+  }
+}
 ```
 
-### Environment Configuration
+---
 
-Create a `.env` file in the root directory:
+## 🎭 Personas
 
-```plaintext
-OPENAI_API_KEY=your_api_key_here
-ENVIRONMENT=development
-LOG_LEVEL=INFO
-```
+### 🧢 Gen Z Friend
+Chill, supportive, and funny. Responds like a close friend over text — short, slang-heavy, emotionally intelligent. Handles sensitive topics with empathy and de-escalates without losing the vibe.
 
-**Security Note**: Never commit `.env` file to version control. Use environment variables in production deployments.
+### 📚 Teacher
+Patient, clear, and structured. Explains any subject using analogies and real-world examples. Adapts complexity to the user's apparent level. Ends responses with a check-in to offer deeper explanation.
 
-### Running the Server
+### 📖 Storyteller
+Vivid and cinematic. Co-authors immersive stories with the user across any genre. Asks one focused question to unlock creative direction, then writes in rich, atmospheric prose — always ending on a cliffhanger or a choice.
+
+---
+
+## 🧠 Prompt Engineering Approach
+
+Each mode is built on five deliberate layers:
+
+1. **System prompt** — sets identity, tone, knowledge scope, behaviour rules, and edge-case handling for each persona
+2. **Few-shot examples** — 2–3 example conversation pairs injected after the system prompt to prime the model's style before the first real message
+3. **XML input wrapping** — all user messages wrapped in `<user_input>` tags to prevent prompt injection attacks
+4. **Temperature tuning** — default `0.7` to balance creativity and consistency across all modes
+5. **Iterative testing** — each mode tested across 10+ conversation types to document performance characteristics
+
+---
+
+## ⚙️ Setup
 
 ```bash
-# Start development server with auto-reload
+# Clone the repo
+git clone https://github.com/yourusername/ai-chatbot-api
+cd ai-chatbot-api
+
+# Install dependencies
+pip install fastapi openai python-dotenv uvicorn
+
+# Configure environment
+cp .env.example .env
+# Add your OPENAI_API_KEY to .env
+
+# Run locally
 uvicorn main:app --reload
-
-# Run on specific port
-uvicorn main:app --host 0.0.0.0 --port 8000
-
-# Production mode (without reload)
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
-
-The API will be available at:
-- **API Base URL**: http://127.0.0.1:8000
-- **Interactive Docs (Swagger UI)**: http://127.0.0.1:8000/docs
-- **Alternative Docs (ReDoc)**: http://127.0.0.1:8000/redoc
-
----
-
-## ☁️ Deployment Instructions (Railway)
-
-This project is optimized for deployment on **Railway.app** for serverless, hassle-free deployment.
-
-### Deployment Steps
-
-#### 1. Push to GitHub
-Ensure your repository contains:
-- ✅ `Procfile` (process type definitions)
-- ✅ `requirements.txt` (Python dependencies)
-- ✅ `main.py` (application entry point)
-
-#### 2. Connect Repository to Railway
-1. Log in to [Railway.app](https://railway.app/)
-2. Click **"New Project"** → **"Deploy from GitHub"**
-3. Select your `agent-service-backend` repository
-4. Grant Railway access to your GitHub account
-
-#### 3. Configure Environment Variables
-In the Railway dashboard:
-1. Navigate to **Variables** tab
-2. Add the following variables:
-   ```
-   OPENAI_API_KEY=your_actual_api_key
-   ENVIRONMENT=production
-   LOG_LEVEL=INFO
-   ```
-3. Click **"Save"**
-
-#### 4. Deploy & Monitor
-1. Railway automatically detects `Procfile` and deploys
-2. Monitor deployment logs in real-time
-3. Public URL generated automatically: `https://your-app.up.railway.app`
-4. View metrics, logs, and deployment history in dashboard
-
-### Production Configuration
-- **Auto-scaling**: Handled by Railway
-- **Load Balancing**: Automatic across instances
-- **SSL/TLS**: Enabled by default
-- **Health Checks**: Implement `/health` endpoint for monitoring
-
----
-
-## 🧠 Core Engineering Concepts (Internal)
-
-During the development of this service, a secondary research phase was conducted to master the underlying mechanics of the **Transformer architecture**:
-
-### Self-Attention Implementation
-Built a **decoder-only Transformer from scratch using PyTorch** to understand the fundamental mechanics:
-- **Query (Q), Key (K), Value (V)** matrix interactions
-- **Attention score computation** and normalization
-- **Softmax masking** for attention weight distribution
-
-### Causal Masking
-Implemented **lower-triangular masking** to ensure autoregressive integrity during token generation:
-- Prevents the model from attending to future tokens
-- Maintains temporal consistency in sequence generation
-- Critical for realistic left-to-right token streaming
-
-### Multi-Head Optimization
-Analyzed the benefit of **parallel attention heads** for capturing diverse linguistic features:
-- Enables simultaneous attention to multiple representation subspaces
-- Improves model expressiveness and semantic understanding
-- Justifies the computational overhead in production deployments
-
----
-
-## 📬 API Documentation
-
-### POST /chat
-Sends a message to the agent and receives a stateful, streamed response.
-
-#### Request Body
-```json
-{
-  "message": "Explain the benefit of async programming.",
-  "sessionId": "unique-user-id-123"
-}
-```
-
-#### Response (Streaming)
-```json
-{
-  "content": "Async programming allows...",
-  "sessionId": "unique-user-id-123",
-  "timestamp": "2024-01-15T10:30:00Z"
-}
-```
-
-### Example cURL Request
-```bash
-curl -X POST "http://127.0.0.1:8000/chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "What is the advantage of async/await?",
-    "sessionId": "user-session-001"
-  }'
-```
-
-### Interactive API Exploration
-Visit http://127.0.0.1:8000/docs to test all endpoints with Swagger UI
-
----
-
-## 🔧 Project Structure
-
-```
-agent-service-backend/
-├── main.py                 # Application entry point
-├── requirements.txt        # Python dependencies
-├── Procfile               # Railway deployment config
-├── .env.example           # Environment variables template
-├── .gitignore             # Git ignore rules
-├── README.md              # This file
-│
-├── app/
-│   ├── __init__.py
-│   ├── core/
-│   │   ├── config.py      # Configuration management
-│   │   └── security.py    # Security utilities
-│   ├── models/
-│   │   └── schemas.py     # Pydantic models
-│   ├── services/
-│   │   └── llm_service.py # OpenAI integration
-│   ├── api/
-│   │   ├── routes.py      # API endpoints
-│   │   └── dependencies.py # Dependency injection
-│   └── utils/
-│       └── helpers.py     # Utility functions
-│
-└── tests/
-    ├── test_api.py        # API tests
-    └── test_services.py   # Service tests
 ```
 
 ---
 
-## 🚀 Performance Metrics
+## 🔑 Environment Variables
 
-- **Concurrency**: Handles 1000+ concurrent connections
-- **Response Time**: Sub-100ms for token generation
-- **Throughput**: 10,000+ requests/second
-- **Memory Efficiency**: Optimized async I/O with minimal overhead
-- **Token Streaming**: Real-time TTFT < 200ms
+| Variable | Description |
+|---|---|
+| `OPENAI_API_KEY` | Your OpenAI API key |
 
 ---
 
-## 📚 Key Technologies Explained
+## 📁 Project Structure
 
-### FastAPI
-Modern web framework delivering:
-- **Automatic OpenAPI documentation**
-- **Built-in request validation** with Pydantic
-- **Excellent async support** with native asyncio
-- **Dependency injection** for clean architecture
-
-### Pydantic V2
-- Runtime type checking and validation
-- JSON schema generation
-- Serialization/deserialization helpers
-- Performance improvements over V1
-
-### Server-Sent Events (SSE)
-- Lightweight alternative to WebSockets for one-directional streaming
-- Perfect for real-time token streaming
-- Native browser support without additional libraries
-- Reduced latency compared to polling
+```
+ai-chatbot-api/
+├── main.py           # Routes, prompt configs, and business logic
+├── .env              # Environment variables (not committed)
+├── .env.example      # Template for environment setup
+├── requirements.txt  # Python dependencies
+└── README.md
+```
 
 ---
 
-## 🤝 Contributing
+## 📦 Deployment
 
-Contributions are welcome! Please:
+Deployed on **Railway**. Push to `main` triggers automatic redeploy.
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit changes: `git commit -am 'Add new feature'`
-4. Push to branch: `git push origin feature/your-feature`
-5. Submit a Pull Request
-
-### Code Standards
-- Follow PEP 8 style guide
-- Write type hints for all functions
-- Include docstrings for public functions
-- Maintain test coverage > 80%
+🌐 Live URL: `https://your-app.railway.app`
 
 ---
 
-## 📞 Contact & About
+## 📄 License
 
-**Prem Puri Goswami**  
-Full Stack Engineer & AI Solutions Architect
-
-- 🔗 **LinkedIn**: [Connect on LinkedIn](https://linkedin.com/in/prem-goswami)
-- 🌐 **Portfolio**: [View Portfolio](https://prem-goswami.dev)
-- 📧 **Email**: Contact via GitHub
-
----
-
-## 📝 License
-
-This project is open source and available under the MIT License.
-
----
-
-**⭐ If you find this project helpful, please consider giving it a star!**
-
-*Last Updated: January 2025*
+MIT
