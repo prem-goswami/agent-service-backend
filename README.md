@@ -161,10 +161,7 @@ ai-chatbot-api/
 
 Deployed on **Railway**. Push to `main` triggers automatic redeploy.
 
-🌐 Live URL: `https://your-app.railway.app`
+🌐 Live URL: `https://agent-service-backend-production.up.railway.app/`
 
 ---
 
-## 📄 License
-
-MIT
